@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bakfiets Board</title>
+<meta name="description" content="Who's on what for Bakfiets F26, pulled live from GitHub.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter+Tight:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f1ebdf; --fg:#17150f; --muted:#6a6253; --line:#d6ccb8; --tile:#e6dece; --hover:#ded5c3;
+  --accent:#e4572e; --late:#c23a1b; --soon:#a8641a;
+  --mech:#3f6c9e; --elec:#b8741f; --firm:#7a5a93; --gen:#6a6253;
+  --s-open:#9c937f; --s-progress:#3f6c9e; --s-waiting:#c48a1c; --s-review:#7a5a93; --s-done:#4f8a4f;
+  --serif:"Instrument Serif","Iowan Old Style",Georgia,serif;
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#13110d; --fg:#f1ebdf; --muted:#9c937f; --line:#2d2922; --tile:#1e1b16; --hover:#27231c;
+  --accent:#ef6a42; --late:#ff7d5c; --soon:#e0a24a;
+  --mech:#7ea4d1; --elec:#e0a24a; --firm:#b394cc; --gen:#9c937f;
+  --s-open:#7d7563; --s-progress:#7ea4d1; --s-waiting:#e0b04a; --s-review:#b394cc; --s-done:#7fb87f;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:400 14px/1.45 var(--sans);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding-block:12px 10px}
+h1{font:400 30px/1 var(--serif);margin:0}
+.spacer{flex:1}
+.tabs{display:flex;gap:16px}
+.tabs button{border:0;background:none;color:var(--muted);font:500 14px var(--sans);padding:4px 0;cursor:pointer;border-bottom:1.5px solid transparent}
+.tabs button[aria-pressed="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.btn{border:1px solid var(--line);background:none;color:var(--fg);font:500 13px var(--sans);padding:5px 12px;border-radius:999px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--tile)}
+.btn.primary{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding-block:0 10px}
+.chip{border:0;background:none;color:var(--muted);font:500 13px var(--sans);padding:2px 0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chip[aria-pressed="true"]{color:var(--fg)}
+.chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+select,input{font:13px var(--sans);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+#q{min-width:0;width:180px;max-width:100%}
+.summary{padding-block:12px 4px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.summary .bad{color:var(--late)}
+.note{margin-block:10px 0;padding:8px 10px;border-left:2px solid var(--accent);background:var(--tile);font-size:13px}
+main{padding-block:6px 40px}
+.board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{display:flex;flex-direction:column;gap:6px}
+.colhead{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px;padding:4px 2px 6px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.colhead i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.colhead span{color:var(--muted);font-weight:400}
+.card{background:var(--tile);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;text-decoration:none;color:inherit}
+.card:hover{background:var(--hover)}
+.row{display:flex;align-items:center;gap:6px}
+.num{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--t);flex:none;display:inline-block}
+.title{font-weight:500;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.sub{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.late{color:var(--late)} .soon{color:var(--soon)}
+.empty{color:var(--muted);font-size:13px;padding:6px 2px}
+.peoplegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px 22px}
+.person h3{margin:0 0 4px;font:400 22px/1.1 var(--serif);display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:4px}
+.person h3 span{font:400 12px var(--sans);color:var(--muted)}
+.mini{display:flex;gap:7px;align-items:center;padding:4px;border-radius:5px;text-decoration:none;color:inherit}
+.mini:hover{background:var(--tile)}
+.mini .title{font-size:13.5px;font-weight:400;flex:1;min-width:0}
+.st{font-size:12px;color:var(--c);white-space:nowrap}
+.section-h{font:400 22px/1.1 var(--serif);margin:26px 0 8px}
+.free{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:13.5px}
+.loose{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+.calwrap{overflow-x:auto}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));min-width:800px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.dow{font-size:12px;color:var(--muted);padding:4px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.day{min-height:96px;padding:5px;display:flex;flex-direction:column;gap:3px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.day.past{background:color-mix(in srgb,var(--tile) 55%,transparent)}
+.day .d{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.day.today .d{color:var(--accent);font-weight:600}
+.tiny{font-size:12px;background:var(--tile);border-radius:4px;padding:2px 6px;overflow-wrap:anywhere;display:flex;gap:5px;align-items:baseline;text-decoration:none;color:inherit}
+.tiny:hover{background:var(--hover)}
+.tiny b{font-weight:400;color:var(--muted)}
+.tray{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border:1px dashed var(--line);border-radius:6px}
+.calnav{display:flex;gap:8px;align-items:center;margin:4px 0 10px;flex-wrap:wrap}
+.calnav strong{font:400 22px var(--serif);margin-left:6px}
+footer{color:var(--muted);font-size:12px;padding-block:0 30px}
+@media (max-width:640px){#q{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>Bakfiets</h1>
+      <div class="tabs" role="group" aria-label="View">
+        <button data-view="board" aria-pressed="true">Board</button>
+        <button data-view="people" aria-pressed="false">People</button>
+        <button data-view="cal" aria-pressed="false">Dates</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" id="refresh">Refresh</button>
+      <a class="btn primary" href="https://github.com/Electrium-Mobility/Bakfiets-F26/issues/new" target="_blank" rel="noopener">New issue</a>
+    </div>
+    <div class="filters">
+      <div id="teamChips" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+      <select id="personSel" aria-label="Filter by person"><option value="">Everyone</option></select>
+      <input id="q" type="search" placeholder="Search" aria-label="Search">
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <div id="note" class="note" hidden></div>
+  <div class="summary" id="summary"></div>
+  <main id="main"><div class="empty">Loading…</div></main>
+  <footer id="foot"></footer>
+</div>
+<script>
+(() => {
+const REPO = "Electrium-Mobility/Bakfiets-F26";
+const API = "https://api.github.com/repos/" + REPO + "/issues?state=all&per_page=100&sort=updated";
+// GitHub username -> first name. Add people here when they join.
+const PEOPLE = {
+  "aarushlingamchetti-hue":"Aarush", "aluangph":"Annie", "Ateeb-1":"Ateeb", "BLUEARROW7000":"David",
+  "edwinyyu":"Edwin", "gmngana":"Henry", "Bobbyxyu":"Hongfu", "HXJ08":"Jack", "sleepycheems":"Joe",
+  "Quaot":"Justin", "kira-lyakh":"Kira", "Len-is-coding":"Len", "nmoscoe":"Nicole", "Nishanth-Gpu":"Nishanth",
+  "Waddles7678":"Olivia", "oscarjia55-commits":"Oscar", "owekel":"Owen", "Sonya-Sianto":"Sonya",
+  "sophiia-wu":"Sophia", "ColonClosedBracket":"Trevor", "4Ballsz":"Youji"
+};
+const STATUSES = [
+  {id:"open", label:"Not started", c:"--s-open"},
+  {id:"progress", label:"In progress", c:"--s-progress"},
+  {id:"waiting", label:"Waiting", c:"--s-waiting"},
+  {id:"review", label:"Needs review", c:"--s-review"},
+  {id:"done", label:"Done", c:"--s-done"},
+];
+const TEAMS = {mechanical:{label:"Mechanical",c:"--mech"}, electrical:{label:"Electrical",c:"--elec"}, firmware:{label:"Firmware",c:"--firm"}, general:{label:"General",c:"--gen"}};
+const S = {view:"board", team:"all", person:"", q:"", calStart:null};
+let issues = [], fetchedAt = null;
+try { S.view = localStorage.getItem("bk-view") || "board"; } catch (e) {}
+
+const $ = s => document.querySelector(s);
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v; else if (k === "style") el.style.cssText = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) el.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return el;
+}
+const pad = n => String(n).padStart(2, "0");
+const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const mondayOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return addDays(x, -((x.getDay() + 6) % 7)); };
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const fmt = s => { const d = parse(s); return DOW[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()]; };
+const today = () => iso(new Date());
+function ago(t) { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago"; }
+
+function toTask(g) {
+  const labels = g.labels.map(l => (l.name || "").toLowerCase());
+  const team = ["mechanical", "electrical", "firmware"].find(t => labels.includes(t)) || "general";
+  const people = g.assignees.map(a => PEOPLE[a.login] || a.login);
+  let status = "open";
+  if (g.state === "closed") status = "done";
+  else if (labels.includes("needs review")) status = "review";
+  else if (labels.includes("waiting")) status = "waiting";
+  else if (labels.includes("in progress") || people.length) status = "progress";
+  const due = g.milestone && g.milestone.due_on ? iso(new Date(g.milestone.due_on)) : "";
+  return {num: g.number, title: g.title, url: g.html_url, team, people, status, due, comments: g.comments,
+    closedAt: g.closed_at, reason: g.state_reason};
+}
+function dueClass(t) {
+  if (!t.due || t.status === "done") return "";
+  const days = Math.round((parse(t.due) - parse(today())) / 864e5);
+  return days < 0 ? "late" : days <= 3 ? "soon" : "";
+}
+const teamOf = t => TEAMS[t.team];
+const statusOf = id => STATUSES.find(s => s.id === id);
+function allNames() { const s = new Set(Object.values(PEOPLE)); issues.forEach(t => t.people.forEach(p => s.add(p))); return [...s].sort(); }
+function visible() {
+  const q = S.q.trim().toLowerCase().replace(/^#/, "");
+  return issues.filter(t => (S.team === "all" || t.team === S.team) && (!S.person || t.people.includes(S.person)) &&
+    (!q || String(t.num) === q || t.title.toLowerCase().includes(q) || t.people.some(p => p.toLowerCase().includes(q))))
+    .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || a.num - b.num);
+}
+
+function card(t) {
+  return h("a", {class: "card", href: t.url, target: "_blank", rel: "noopener", style: "--t:var(" + teamOf(t).c + ")", title: teamOf(t).label},
+    h("div", {class: "row"}, h("i", {class: "tdot"}), h("span", {class: "num"}, "#" + t.num)),
+    h("div", {class: "title"}, t.title),
+    h("div", {class: "sub"}, h("span", null, t.people.length ? t.people.join(", ") : "Unassigned"),
+      t.due ? h("span", {class: dueClass(t)}, fmt(t.due)) : null,
+      t.comments ? h("span", null, t.comments + (t.comments === 1 ? " comment" : " comments")) : null));
+}
+function tiny(t) {
+  return h("a", {class: "tiny", href: t.url, target: "_blank", rel: "noopener", style: "--t:var(" + teamOf(t).c + ")", title: t.people.join(", ") || "Unassigned"},
+    h("i", {class: "tdot"}), h("span", null, h("b", null, "#" + t.num + " "), t.title));
+}
+function renderTop() {
+  const tc = $("#teamChips"); tc.textContent = "";
+  [["all", "All", null], ...Object.entries(TEAMS).filter(([k]) => k !== "general").map(([k, v]) => [k, v.label, v.c])].forEach(([k, label, c]) =>
+    tc.append(h("button", {class: "chip", "aria-pressed": String(S.team === k), onclick: () => { S.team = k; render(); }}, c ? h("i", {style: "background:var(" + c + ")"}) : null, label)));
+  const sel = $("#personSel"), cur = S.person; sel.textContent = "";
+  sel.append(h("option", {value: ""}, "Everyone"), ...allNames().map(n => h("option", {value: n}, n))); sel.value = cur;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === S.view)));
+  const open = issues.filter(t => t.status !== "done");
+  const late = open.filter(t => dueClass(t) === "late").length;
+  const wk = iso(addDays(new Date(), 7));
+  const soon = open.filter(t => t.due && t.due <= wk && dueClass(t) !== "late").length;
+  const busy = new Set(open.flatMap(t => t.people));
+  const free = allNames().filter(n => !busy.has(n)).length;
+  const s = $("#summary"); s.textContent = "";
+  if (issues.length) s.append(open.length + " open · ", h("span", {class: late ? "bad" : ""}, late + " late"),
+    " · " + soon + " due this week · " + open.filter(t => !t.people.length).length + " unassigned · " + free + " people free");
+}
+function renderBoard(main) {
+  const list = visible(), monthAgo = Date.now() - 30 * 864e5;
+  const board = h("div", {class: "board"});
+  for (const st of STATUSES) {
+    let items = list.filter(t => t.status === st.id);
+    if (st.id === "done") items = items.filter(t => t.reason !== "not_planned" && new Date(t.closedAt) > monthAgo).sort((a, b) => b.closedAt.localeCompare(a.closedAt));
+    board.append(h("section", {class: "col", "aria-label": st.label, style: "--c:var(" + st.c + ")"},
+      h("div", {class: "colhead"}, h("i"), st.label, h("span", null, items.length)), items.map(card)));
+  }
+  main.append(board);
+}
+function renderPeople(main) {
+  const list = visible().filter(t => t.status !== "done");
+  const grid = h("div", {class: "peoplegrid"}), free = [];
+  for (const n of S.person ? [S.person] : allNames()) {
+    const mine = list.filter(t => t.people.includes(n));
+    if (!mine.length) { free.push(n); continue; }
+    grid.append(h("div", {class: "person"}, h("h3", null, n, h("span", null, mine.length)),
+      mine.map(t => { const st = statusOf(t.status);
+        return h("a", {class: "mini", href: t.url, target: "_blank", rel: "noopener", style: "--t:var(" + teamOf(t).c + ")"},
+          h("i", {class: "tdot"}), h("span", {class: "num"}, "#" + t.num), h("span", {class: "title"}, t.title), h("span", {class: "st", style: "--c:var(" + st.c + ")"}, st.label)); })));
+  }
+  main.append(grid.childElementCount ? grid : h("div", {class: "empty"}, "No one matches."));
+  const nobody = list.filter(t => !t.people.length);
+  if (nobody.length) main.append(h("h2", {class: "section-h"}, "Unassigned"), h("div", {class: "loose"}, nobody.map(card)));
+  if (free.length && !S.person) main.append(h("h2", {class: "section-h"}, "No task yet"), h("div", {class: "free"}, free.map(n => h("span", null, n))));
+}
+function renderCal(main) {
+  if (!S.calStart) S.calStart = iso(mondayOf(new Date()));
+  const start = parse(S.calStart), end = addDays(start, 27), t0 = today(), list = visible();
+  main.append(h("div", {class: "calnav"},
+    h("button", {class: "btn", "aria-label": "Previous week", onclick: () => { S.calStart = iso(addDays(start, -7)); render(); }}, "←"),
+    h("button", {class: "btn", onclick: () => { S.calStart = iso(mondayOf(new Date())); render(); }}, "Today"),
+    h("button", {class: "btn", "aria-label": "Next week", onclick: () => { S.calStart = iso(addDays(start, 7)); render(); }}, "→"),
+    h("strong", null, start.getDate() + " " + MON[start.getMonth()] + " – " + end.getDate() + " " + MON[end.getMonth()])));
+  const cal = h("div", {class: "cal"}, ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => h("div", {class: "dow"}, d)));
+  for (let i = 0; i < 28; i++) {
+    const day = addDays(start, i), ds = iso(day);
+    cal.append(h("div", {class: "day" + (ds === t0 ? " today" : ds < t0 ? " past" : "")},
+      h("div", {class: "d"}, day.getDate() === 1 || i === 0 ? day.getDate() + " " + MON[day.getMonth()] : String(day.getDate())),
+      list.filter(t => t.due === ds && t.status !== "done").map(tiny)));
+  }
+  main.append(h("div", {class: "calwrap"}, cal));
+  const over = list.filter(t => t.due && t.due < S.calStart && t.status !== "done");
+  if (over.length) main.append(h("h2", {class: "section-h"}, "Overdue"), h("div", {class: "tray"}, over.map(tiny)));
+  const none = list.filter(t => !t.due && t.status !== "done");
+  if (none.length) main.append(h("h2", {class: "section-h"}, "No date"), h("div", {class: "tray"}, none.map(tiny)));
+}
+function render() {
+  renderTop();
+  const main = $("#main"); if (!issues.length) return;
+  main.textContent = "";
+  if (S.view === "people") renderPeople(main); else if (S.view === "cal") renderCal(main); else renderBoard(main);
+  $("#foot").textContent = fetchedAt ? "From GitHub, " + ago(fetchedAt) + ". Click a card to open the issue." : "";
+}
+
+async function load(force) {
+  try {
+    if (!force) {
+      const c = JSON.parse(sessionStorage.getItem("bk-issues") || "null");
+      if (c && Date.now() - c.at < 120000) { issues = c.data; fetchedAt = c.at; render(); return; }
+    }
+  } catch (e) {}
+  $("#note").hidden = true;
+  try {
+    let page = 1, all = [];
+    while (page <= 3) {
+      const r = await fetch(API + "&page=" + page, {headers: {Accept: "application/vnd.github+json"}});
+      if (r.status === 403 || r.status === 429) throw new Error("rate");
+      if (!r.ok) throw new Error("http");
+      const batch = await r.json(); all = all.concat(batch);
+      if (batch.length < 100) break; page++;
+    }
+    issues = all.filter(g => !g.pull_request).map(toTask);
+    fetchedAt = Date.now();
+    try { sessionStorage.setItem("bk-issues", JSON.stringify({at: fetchedAt, data: issues})); } catch (e) {}
+    render();
+  } catch (e) {
+    const n = $("#note"); n.hidden = false;
+    n.textContent = e.message === "rate" ? "GitHub is limiting requests from this network. Try again in a few minutes." : "Couldn't load issues from GitHub. Check your connection and refresh.";
+    if (!issues.length) $("#main").textContent = "";
+  }
+}
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { S.view = b.dataset.view; try { localStorage.setItem("bk-view", S.view); } catch (e) {} render(); }));
+$("#personSel").addEventListener("change", e => { S.person = e.target.value; render(); });
+let qt; $("#q").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { S.q = e.target.value; render(); }, 150); });
+$("#refresh").addEventListener("click", () => load(true));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && fetchedAt && Date.now() - fetchedAt > 120000) load(true); });
+setInterval(() => { if (!document.hidden) load(true); }, 5 * 60000);
+load(false);
+})();
+</script>
+</body>
+</html>
