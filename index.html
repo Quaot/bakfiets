@@ -119,10 +119,12 @@ const API = "https://api.github.com/repos/" + REPO + "/issues?state=all&per_page
 const PEOPLE = {
   "aarushlingamchetti-hue":"Aarush", "aluangph":"Annie", "Ateeb-1":"Ateeb", "BLUEARROW7000":"David",
   "edwinyyu":"Edwin", "gmngana":"Henry", "Bobbyxyu":"Hongfu", "HXJ08":"Jack", "sleepycheems":"Joe",
-  "Quaot":"Justin", "kira-lyakh":"Kira", "Len-is-coding":"Len", "nmoscoe":"Nicole", "Nishanth-Gpu":"Nishanth",
+  "kira-lyakh":"Kira", "Len-is-coding":"Len", "nmoscoe":"Nicole", "Nishanth-Gpu":"Nishanth",
   "Waddles7678":"Olivia", "oscarjia55-commits":"Oscar", "owekel":"Owen", "Sonya-Sianto":"Sonya",
   "sophiia-wu":"Sophia", "ColonClosedBracket":"Trevor", "4Ballsz":"Youji"
 };
+// People working on an issue who can't be assigned on GitHub yet (invite not accepted).
+const EXTRA = {31:["Nishanth"], 37:["Nishanth"]};
 const STATUSES = [
   {id:"open", label:"Not started", c:"--s-open"},
   {id:"progress", label:"In progress", c:"--s-progress"},
@@ -159,7 +161,7 @@ function ago(t) { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? "
 function toTask(g) {
   const labels = g.labels.map(l => (l.name || "").toLowerCase());
   const team = ["mechanical", "electrical", "firmware"].find(t => labels.includes(t)) || "general";
-  const people = g.assignees.map(a => PEOPLE[a.login] || a.login);
+  const people = [...new Set(g.assignees.filter(a => a.login !== "Quaot").map(a => PEOPLE[a.login] || a.login).concat(EXTRA[g.number] || []))];
   let status = "open";
   if (g.state === "closed") status = "done";
   else if (labels.includes("needs review")) status = "review";
